@@ -11,7 +11,10 @@ repositories {
 publishing {
     publications {
         shadow(MavenPublication) { publication ->
-            project.shadow.component(publication)
+            from project.shadow.component(publication)
+            // On modifie l'artifactId pour qu'il correspond au CARD_CODE et soit publié dans le bon repo pour etre utiliser via le CA...
+            artifactId = 'payment-method-ancv-connect'
+            groupId 'com.payline.payment.ancv-connect'
         }
     }
     repositories {
