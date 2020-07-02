@@ -56,7 +56,7 @@ public class NotificationServiceImpl implements NotificationService {
                             .withPartnerTransactionId(partnerTransactionId)
                             .withStatusCode(transaction.getFullState())
                             .withReservedAmount(reservedAmount)  //
-                            .withTransactionDetails(Email.EmailBuilder.anEmail().withEmail(transaction.getPayer().getBeneficiaryId()).build())
+                            .withTransactionDetails(PluginUtils.buildEmail(transaction.getPayer().getBeneficiaryId()))
                             .build();
 
                     notificationResponse = createPaymentResponseByNotification(correlationId, paymentResponse);

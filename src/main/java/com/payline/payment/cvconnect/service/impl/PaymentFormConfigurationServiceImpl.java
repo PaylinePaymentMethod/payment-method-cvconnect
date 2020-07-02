@@ -2,6 +2,7 @@ package com.payline.payment.cvconnect.service.impl;
 
 import com.payline.payment.cvconnect.service.LogoPaymentFormConfigurationService;
 import com.payline.payment.cvconnect.utils.Constants;
+import com.payline.payment.cvconnect.utils.PluginUtils;
 import com.payline.payment.cvconnect.utils.i18n.I18nService;
 import com.payline.pmapi.bean.paymentform.bean.field.*;
 import com.payline.pmapi.bean.paymentform.bean.form.CustomForm;
@@ -23,9 +24,8 @@ public class PaymentFormConfigurationServiceImpl extends LogoPaymentFormConfigur
     private static final String CVCO_ID_PLACEHOLDER = "payment.form.config.id.placeholder";
     private static final String CVCO_ID_VALIDATION_ERROR = "payment.form.config.validation.error";
 
-    private static final String EMAIL_PATTERN = "([a-zA-Z0-9_]+(\\.[a-zA-Z0-9_]+)*\\@[a-zA-Z0-9_]+\\.[a-zA-Z]{2,4})";
     private static final String PHONE_PATTERN = "(\\d+)";
-    private static final String FULL_PATTERN = "^(" + PHONE_PATTERN + "|" + EMAIL_PATTERN + ")$";
+    private static final String FULL_PATTERN = "^(" + PHONE_PATTERN + "|" + PluginUtils.PATTERN + ")$";
     private static final Pattern PATTERN = Pattern.compile(FULL_PATTERN);
 
     private I18nService i18n = I18nService.getInstance();

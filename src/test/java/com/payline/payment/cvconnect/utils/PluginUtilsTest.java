@@ -28,4 +28,10 @@ class PluginUtilsTest {
         Assertions.assertEquals(Currency.getInstance("USD"), PluginUtils.getCurrencyFromCode(840));
         Assertions.assertEquals(Currency.getInstance("EUR"), PluginUtils.getCurrencyFromCode(978));
     }
+
+    @Test
+    void buildEmail(){
+        Assertions.assertEquals("foo@bar.baz", PluginUtils.buildEmail("foo@bar.baz").getEmail());
+        Assertions.assertEquals("foo@id.com", PluginUtils.buildEmail("foo").getEmail());
+    }
 }

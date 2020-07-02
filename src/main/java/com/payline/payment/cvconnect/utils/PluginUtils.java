@@ -3,6 +3,7 @@ package com.payline.payment.cvconnect.utils;
 
 import com.payline.payment.cvconnect.bean.configuration.RequestConfiguration;
 import com.payline.payment.cvconnect.exception.InvalidDataException;
+import com.payline.pmapi.bean.payment.response.buyerpaymentidentifier.impl.Email;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -16,10 +17,13 @@ import java.util.Base64;
 import java.util.Currency;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class PluginUtils {
     private static final String SEAL_ALGORITHM = "HmacSHA256";
+    public static final String PATTERN = "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$";
 
     private PluginUtils() {
         // ras.
@@ -80,11 +84,29 @@ public class PluginUtils {
 
     /**
      * find the Currency to create from an ISO 4217 numeric currency code
+     *
      * @param code an ISO 4217 numeric currency code
      * @return The right Currency
      */
     public static Currency getCurrencyFromCode(int code) {
         Optional<Currency> currency = Currency.getAvailableCurrencies().stream().filter(c -> c.getNumericCode() == code).findAny();
         return currency.get();
+    }
+
+
+    /**
+     * create an Email object from val
+     * @param val the String to convert into an Email, if val is not a valid email, add '@id.com' at the end
+     * @return
+     */
+    public static Email buildEmail(String val) {
+
+        Pattern pattern = Pattern.compile(PATTERN);
+        Matcher matcher = pattern.matcher(val);
+        if (!matcher.matches()) {
+            val += "@id.com";
+        }
+
+        return Email.EmailBuilder.anEmail().withEmail(val).build();
     }
 }
