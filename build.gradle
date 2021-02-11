@@ -14,6 +14,14 @@ apply plugin: 'jacoco'
 
 
 def externalFileName = "$projectDir/.external"
+description = 'payment-method-cvconnect'
+group = 'com.payline.payment.cvconnect'
+version = '1.3-SNAPSHOT'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+compileJava.options.encoding = 'UTF-8'
 
 if (file(externalFileName).exists()) {
     apply from: "external.gradle"
@@ -21,17 +29,10 @@ if (file(externalFileName).exists()) {
     apply from: "monext.gradle"
 }
 
-description = 'payment-method-cvconnect'
-group = 'com.payline.payment.cvconnect'
-version = '1.3.0.0-SNAPSHOT'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-compileJava.options.encoding = 'UTF-8'
 
 ext {
-    paymentMethodApiVersion = '1.9'
+    paymentMethodApiVersion = '1.11'
     paymentMethodIntegrationVersion = '1.4'
     mockitoVersion = '2.19.0'
     releaseDirectoryPath = 'D:/build'
