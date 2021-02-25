@@ -13,6 +13,8 @@ import com.payline.pmapi.bean.notification.response.NotificationResponse;
 import com.payline.pmapi.bean.notification.response.impl.IgnoreNotificationResponse;
 import com.payline.pmapi.bean.notification.response.impl.PaymentResponseByNotificationResponse;
 import com.payline.pmapi.bean.notification.response.impl.TransactionStateChangedResponse;
+import com.payline.pmapi.bean.payment.response.buyerpaymentidentifier.impl.Email;
+import com.payline.pmapi.bean.payment.response.impl.PaymentResponseSuccess;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,32 +27,36 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.io.ByteArrayInputStream;
+import java.math.BigInteger;
 import java.util.stream.Stream;
 
 import static com.payline.payment.cvconnect.bean.common.Transaction.State.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NotificationServiceImplTest {
     private NotificationServiceImpl service = new NotificationServiceImpl();
 
     private static Stream<Arguments> statusSet() {
         return Stream.of(
-                Arguments.of(VALIDATED, TransactionStateChangedResponse.class),
-                Arguments.of(ABORTED, PaymentResponseByNotificationResponse.class),
-                Arguments.of(EXPIRED, PaymentResponseByNotificationResponse.class),
-                Arguments.of(CONSIGNED, TransactionStateChangedResponse.class),
-                Arguments.of(REJECTED, TransactionStateChangedResponse.class),
-                Arguments.of(PAID, TransactionStateChangedResponse.class),
-                Arguments.of(CANCELLED, TransactionStateChangedResponse.class),
-                Arguments.of(INITIALIZED, IgnoreNotificationResponse.class),
-                Arguments.of(PROCESSING, IgnoreNotificationResponse.class),
-                Arguments.of(AUTHORIZED, PaymentResponseByNotificationResponse.class)
+                Arguments.of(VALIDATED, "123123123", TransactionStateChangedResponse.class),
+                Arguments.of(VALIDATED, null, PaymentResponseByNotificationResponse.class),
+                Arguments.of(ABORTED, "123123123", PaymentResponseByNotificationResponse.class),
+                Arguments.of(EXPIRED, "123123123", PaymentResponseByNotificationResponse.class),
+                Arguments.of(CONSIGNED, "123123123", TransactionStateChangedResponse.class),
+                Arguments.of(REJECTED, "123123123", TransactionStateChangedResponse.class),
+                Arguments.of(PAID, "123123123", TransactionStateChangedResponse.class),
+                Arguments.of(CANCELLED, "123123123", TransactionStateChangedResponse.class),
+                Arguments.of(INITIALIZED, "123123123", IgnoreNotificationResponse.class),
+                Arguments.of(PROCESSING, "123123123", IgnoreNotificationResponse.class),
+                Arguments.of(AUTHORIZED, "123123123", PaymentResponseByNotificationResponse.class)
         );
     }
 
     @ParameterizedTest
     @MethodSource("statusSet")
-    void parse(Transaction.State status, Class responseClass) {
-        String transactionId = "123123123";
+    void parse(Transaction.State status, String transactionId, Class responseClass) {
         String json = MockUtils.aCVCoResponse(status);
 
         NotificationRequest request = MockUtils.aPaylineNotificationRequestBuilder()
@@ -60,7 +66,28 @@ class NotificationServiceImplTest {
 
         NotificationResponse response = service.parse(request);
 
-        Assertions.assertNotNull(response);
+        assertNotNull(response);
         Assertions.assertEquals(responseClass, response.getClass());
     }
+
+
+    @Test
+    void onTransactionValidated() {
+        final String json = MockUtils.aCVCoResponse(VALIDATED);
+        NotificationRequest request = MockUtils.aPaylineNotificationRequestBuilder()
+                .withContent(new ByteArrayInputStream(json.getBytes()))
+                .withTransactionId(null)
+                .build();
+        NotificationResponse response = service.parse(request);
+        assertNotNull(response);
+        assertTrue(response instanceof PaymentResponseByNotificationResponse);
+        final PaymentResponseByNotificationResponse notificationResponse =
+                (PaymentResponseByNotificationResponse) response;
+        assertTrue(notificationResponse.getPaymentResponse() instanceof PaymentResponseSuccess);
+        final PaymentResponseSuccess paymentResponseSuccess  = (PaymentResponseSuccess) notificationResponse.getPaymentResponse();
+        assertEquals("fiawa31zot", paymentResponseSuccess.getPartnerTransactionId());
+        assertEquals("ntrupond71@yopmail.com", ((Email) paymentResponseSuccess.getTransactionDetails()).getEmail());
+        assertEquals(new BigInteger("2000"), paymentResponseSuccess.getReservedAmount().getAmountInSmallestUnit());
+    }
+
 }
