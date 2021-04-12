@@ -90,6 +90,9 @@ public class PluginUtils {
      */
     public static Currency getCurrencyFromCode(int code) {
         Optional<Currency> currency = Currency.getAvailableCurrencies().stream().filter(c -> c.getNumericCode() == code).findAny();
+        if (!currency.isPresent()) {
+            throw new InvalidDataException("No Currency from code " + code);
+        }
         return currency.get();
     }
 
