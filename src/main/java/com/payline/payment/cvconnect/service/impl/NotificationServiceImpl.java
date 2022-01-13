@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Date;
 
 public class NotificationServiceImpl implements NotificationService {
-    private static final Logger LOGGER = LogManager.getLogger(PaymentServiceImpl.class);
+    private static final Logger LOGGER = LogManager.getLogger(NotificationServiceImpl.class);
 
     @Override
     public NotificationResponse parse(NotificationRequest request) {
@@ -30,36 +30,60 @@ public class NotificationServiceImpl implements NotificationService {
         String partnerTransactionId = "UNKNOWN";
         try {
             // init data
-            String content = PluginUtils.inputStreamToString(request.getContent());
+            final String content = PluginUtils.inputStreamToString(request.getContent());
             com.payline.payment.cvconnect.bean.response.PaymentResponse notificationPaymentResponse = com.payline.payment.cvconnect.bean.response.PaymentResponse.fromJson(content);
-            Transaction transaction = notificationPaymentResponse.getTransaction();
+            final Transaction transaction = notificationPaymentResponse.getTransaction();
             partnerTransactionId = transaction.getId();
 
-            String transactionId = transaction.getOrder().getId();
+            final String transactionId = request.getTransactionId();
 
-            TransactionCorrelationId correlationId = TransactionCorrelationId.TransactionCorrelationIdBuilder
+            final TransactionCorrelationId correlationId = TransactionCorrelationId.TransactionCorrelationIdBuilder
                     .aCorrelationIdBuilder()
-                    .withType(TransactionCorrelationId.CorrelationIdType.TRANSACTION_ID)
-                    .withValue(transactionId)
+                    .withType(TransactionCorrelationId.CorrelationIdType.PARTNER_TRANSACTION_ID)
+                    .withValue(partnerTransactionId)
                     .build();
 
+            final TransactionStatus paylineStatus;
+            final PaymentResponse paymentResponse;
+            final Amount reservedAmount;
             switch (transaction.getState()) {
                 case AUTHORIZED:
                     // PaymentResponseByNotificationResponse => Success
-                    Amount reservedAmount = new Amount(
+                    reservedAmount = new Amount(
                             transaction.getPayer().getFirstAuthorization().getAmount().getTotal()
                             , PluginUtils.getCurrencyFromCode(transaction.getPayer().getFirstAuthorization().getAmount().getCurrency())
                     );
 
-                    PaymentResponse paymentResponse = PaymentResponseSuccess.PaymentResponseSuccessBuilder
+                    paymentResponse = PaymentResponseSuccess.PaymentResponseSuccessBuilder
                             .aPaymentResponseSuccess()
                             .withPartnerTransactionId(partnerTransactionId)
                             .withStatusCode(transaction.getFullState())
-                            .withReservedAmount(reservedAmount)  //
-                            .withTransactionDetails(PluginUtils.buildEmail(transaction.getPayer().getBeneficiaryId()))
+                            .withReservedAmount(reservedAmount)//
+                            .withTransactionDetails(Email.EmailBuilder.anEmail().withEmail(transaction.getPayer().getBeneficiaryId()).build())
                             .build();
 
                     notificationResponse = createPaymentResponseByNotification(correlationId, paymentResponse);
+                    break;
+                case VALIDATED:
+                    reservedAmount = new Amount(
+                            transaction.getPayer().getFirstAuthorization().getAmount().getTotal()
+                            , PluginUtils.getCurrencyFromCode(transaction.getPayer().getFirstAuthorization().getAmount().getCurrency())
+                    );
+
+                    paymentResponse = PaymentResponseSuccess.PaymentResponseSuccessBuilder
+                            .aPaymentResponseSuccess()
+                            .withPartnerTransactionId(partnerTransactionId)
+                            .withStatusCode(transaction.getFullState())
+                            .withReservedAmount(reservedAmount)
+                            .withTransactionDetails(PluginUtils.buildEmail(transaction.getPayer().getBeneficiaryId()))
+                            .build();
+
+                    if (PluginUtils.isEmpty(transactionId)) {
+                        notificationResponse = createPaymentResponseByNotification(correlationId, paymentResponse);
+                    } else {
+                        paylineStatus = SuccessTransactionStatus.builder().build();
+                        notificationResponse = createTransactionStateChanged(transactionId, partnerTransactionId, paylineStatus);
+                    }
                     break;
                 case ABORTED:
                     // PaymentResponseByNotificationResponse => Failure
@@ -86,11 +110,6 @@ public class NotificationServiceImpl implements NotificationService {
                     notificationResponse = createPaymentResponseByNotification(correlationId, paymentResponse);
                     break;
 
-                // TransactionStateChangedResponse
-                case VALIDATED:
-                    TransactionStatus paylineStatus = SuccessTransactionStatus.builder().build();
-                    notificationResponse = createTransactionStateChanged(transactionId, partnerTransactionId, paylineStatus);
-                    break;
                 case CONSIGNED:
                     paylineStatus = OnHoldTransactionStatus.builder().onHoldCause(OnHoldCause.ASYNC_RETRY).build();
                     notificationResponse = createTransactionStateChanged(transactionId, partnerTransactionId, paylineStatus);

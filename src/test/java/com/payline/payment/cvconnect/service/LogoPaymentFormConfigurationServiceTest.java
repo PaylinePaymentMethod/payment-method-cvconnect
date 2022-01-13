@@ -110,7 +110,8 @@ class LogoPaymentFormConfigurationServiceTest {
         doReturn("image/png").when( config ).get("logo.contentType");
 
         // when: calling method getLogo(), then: an exception is thrown
-        assertThrows( PluginException.class, () -> testService.getLogo( "whatever", Locale.getDefault() ) );
+        Locale locale = Locale.getDefault();
+        assertThrows( PluginException.class, () -> testService.getLogo( "whatever", locale ) );
     }
 
 }

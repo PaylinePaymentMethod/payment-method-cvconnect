@@ -16,7 +16,7 @@ import com.payline.pmapi.service.RefundService;
 import org.apache.logging.log4j.Logger;
 
 public class RefundServiceImpl implements RefundService {
-    private static final Logger LOGGER = LogManager.getLogger(PaymentServiceImpl.class);
+    private static final Logger LOGGER = LogManager.getLogger(RefundServiceImpl.class);
     private HttpClient client = HttpClient.getInstance();
 
     @Override
