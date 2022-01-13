@@ -16,7 +16,7 @@ apply plugin: 'jacoco'
 def externalFileName = "$projectDir/.external"
 description = 'payment-method-cvconnect'
 group = 'com.payline.payment.cvconnect'
-version = '1.5'
+version = '1.6-SNAPSHOT'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
